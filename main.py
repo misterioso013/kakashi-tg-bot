@@ -1,9 +1,12 @@
+""" Script para copiar todas as mensagens de um chat e enviar para outro chat """
+
+import os
+import sys
+import json
+import webbrowser
 import asyncio
 from dotenv import load_dotenv
-import os
-import json
 from pyrogram import Client, filters
-import webbrowser
 
 load_dotenv()
 
@@ -20,16 +23,17 @@ print("Bot iniciado")
 
 
 def load_ids():
+    """Carregar os ids das mensagens que não foram enviadas"""
     # Verificar se o arquivo list_ids.json existe
     ids = []  # Lista de ids das mensagens: [123, 124, 125]
     allsent = []  # Lista de ids das mensagens enviadas: [123, 124, 125]
     if os.path.exists("list_ids.json"):
         print("Arquivo list_ids.json encontrado")
         # Carregar o arquivo list_ids.json: {messages: { id: 123, sent: true}, { id: 124, sent: false}
-        with open("list_ids.json", "r") as file:
-            getIds = json.load(file)
+        with open("list_ids.json", "r", encoding="utf8") as file:
+            get_ids = json.load(file)
             # pegar apenas os ids que não foram enviados
-            for id in getIds["messages"]:
+            for id in get_ids["messages"]:
                 if not id["sent"]:
                     ids.append(id["id"])
                 else:
@@ -52,6 +56,7 @@ ids.sort()
 
 @app.on_message(filters.command("send", prefixes="/") & filters.me)
 async def send_messages(client, message):
+    """Enviar as mensagens para o chat alvo"""
     await message.reply_text("Salvando as mensagens no arquivo list_ids.json")
     chatsourcetitle = await client.get_chat(chat_source)
     print(f"Chat de origem encontrado: {chatsourcetitle.title}")
@@ -61,9 +66,9 @@ async def send_messages(client, message):
             print(f"Adicionando {msg.id} na lista de ids")
             ids.append(msg.id)
 
-    with open("list_ids.json", "w") as file:
-        allIds = ids + allsIds
-        json.dump({"messages": [{"id": id, "sent": False} for id in allIds]}, file)
+    with open("list_ids.json", "w", encoding="utf8") as file:
+        all_ids = ids + allsIds
+        json.dump({"messages": [{"id": id, "sent": False} for id in all_ids]}, file)
     print(f"Total de mensagens: {len(ids)} adicionadas no arquivo list_ids.json")
     chat_target_show = await client.get_chat(chat_target)
     print(f"Chat alvo: {chat_target_show.title}")
@@ -77,13 +82,13 @@ async def send_messages(client, message):
         print(f"Enviando {msg.id}")
         await msg.copy(chat_target)
         # Marcar a mensagem como enviada no arquivo list_ids.json
-        with open("list_ids.json", "r") as file:
-            getIds = json.load(file)
-            for id in getIds["messages"]:
+        with open("list_ids.json", "r", encoding="utf8") as file:
+            get_ids = json.load(file)
+            for id in get_ids["messages"]:
                 if id["id"] == msg.id:
                     id["sent"] = True
-        with open("list_ids.json", "w") as file:
-            json.dump(getIds, file)
+        with open("list_ids.json", "w", encoding="utf8") as file:
+            json.dump(get_ids, file)
         print(f"Mensagem {msg.id} enviada")
         await asyncio.sleep(0.5)
     print("Todas as mensagens foram enviadas")
@@ -91,7 +96,7 @@ async def send_messages(client, message):
         f"Todas as mensagens foram enviadas para o chat alvo {chat_target_show.title}\n\nScript criado por @AllDevsBR"
     )
     webbrowser.open("https://projects.all.dev.br")
-    exit()
+    sys.exit()
 
 
 app.run()
